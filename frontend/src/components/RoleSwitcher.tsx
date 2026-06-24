@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { apiClient } from '../api/client';
 
 export const RoleSwitcher: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleRoleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newRole = e.target.value;
     if (newRole === 'login') {
       localStorage.removeItem('jwt');
@@ -14,13 +15,24 @@ export const RoleSwitcher: React.FC = () => {
       return;
     }
     
-    localStorage.setItem('userRole', newRole);
-    // Dummy JWT for the demo role switch
-    localStorage.setItem('jwt', `dummy_jwt_for_${newRole}`);
-    
-    if (newRole === 'REGULATORY_AFFAIRS') navigate('/dashboard/regulatory');
-    else if (newRole === 'DATA_MANAGER') navigate('/dashboard/datamanager');
-    else if (newRole === 'DOCTOR') navigate('/dashboard/doctor');
+    let username = '';
+    if (newRole === 'REGULATORY_AFFAIRS') username = 'priya';
+    else if (newRole === 'DATA_MANAGER') username = 'arjun';
+    else if (newRole === 'DOCTOR') username = 'ramesh';
+
+    if (username) {
+      try {
+        const res = await apiClient.post('/auth/login', { username });
+        localStorage.setItem('jwt', res.data.access_token);
+        localStorage.setItem('userRole', res.data.user?.role || newRole);
+        
+        if (newRole === 'REGULATORY_AFFAIRS') window.location.href = '/dashboard/regulatory';
+        else if (newRole === 'DATA_MANAGER') window.location.href = '/dashboard/datamanager';
+        else if (newRole === 'DOCTOR') window.location.href = '/dashboard/doctor';
+      } catch (err) {
+        console.error('Failed to switch role:', err);
+      }
+    }
   };
 
   if (location.pathname === '/login' || location.pathname === '/') return null;

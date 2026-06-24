@@ -66,17 +66,23 @@ async def get_report_pdf(
         if not report.report_html:
             import google.generativeai as genai
             import os
-            try:
-                genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-                model = genai.GenerativeModel("gemini-2.5-flash")
-                prompt = f"Write a professional, 2-paragraph pharmacovigilance executive summary. Context: A new regulatory rule (ID: {rule.id}) was just deployed for Trial {trial.id if trial else 'Unknown'}. As a result, {len(flagged_evals)} patients were flagged as AT RISK. Recommend immediate clinical review and temporary dosing suspension for affected patients."
-                response = model.generate_content(prompt)
-                report.report_html = response.text
-                await db.commit()
-            except Exception as e:
-                import logging
-                logging.error(f"Gemini generation failed during PDF download: {e}")
-                report.report_html = f"A new regulatory rule was applied to Trial {trial.id if trial else 'Unknown'}. {len(flagged_evals)} patients have been newly flagged as AT RISK based on recent biomarker readings."
+            from core.env import load_robust_env
+            load_robust_env()
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key or api_key.strip() == "" or "dummy" in api_key.lower():
+                report.report_html = f"A new regulatory rule was applied to Trial {trial.id if trial else 'Unknown'}. {len(flagged_evals)} patients have been newly flagged as AT RISK based on recent Heart Rate Variability (HRV) biomarker readings."
+            else:
+                try:
+                    genai.configure(api_key=api_key)
+                    model = genai.GenerativeModel("gemini-2.5-flash")
+                    prompt = f"Write a professional, 2-paragraph pharmacovigilance executive summary. Context: A new regulatory rule (ID: {rule.id}) was just deployed for Trial {trial.id if trial else 'Unknown'}. As a result, {len(flagged_evals)} patients were flagged as AT RISK. Recommend immediate clinical review and temporary dosing suspension for affected patients."
+                    response = model.generate_content(prompt)
+                    report.report_html = response.text
+                    await db.commit()
+                except Exception as e:
+                    import logging
+                    logging.error(f"Gemini generation failed during PDF download: {e}")
+                    report.report_html = f"A new regulatory rule was applied to Trial {trial.id if trial else 'Unknown'}. {len(flagged_evals)} patients have been newly flagged as AT RISK based on recent biomarker readings."
                 # We don't commit the fallback so it can try again next time if quota resets
                 
         # Generate dynamic HTML content

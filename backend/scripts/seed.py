@@ -16,8 +16,18 @@ from db.models import (
     Rule, Guideline, PVReport, RuleStatus, GuidelineStatus
 )
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://reguvigil:secret@localhost:5432/reguvigil")
-engine = create_async_engine(DATABASE_URL, echo=False)
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+if not DATABASE_URL or "postgresql" not in DATABASE_URL:
+    _db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reguvigil_local.db")
+    DATABASE_URL = f"sqlite+aiosqlite:///{_db_path}"
+    print(f"[Seed] Using SQLite: {_db_path}")
+else:
+    print(f"[Seed] Using PostgreSQL")
+
+_engine_kwargs = {"echo": False}
+if DATABASE_URL.startswith("sqlite"):
+    _engine_kwargs["connect_args"] = {"check_same_thread": False}
+engine = create_async_engine(DATABASE_URL, **_engine_kwargs)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -26,10 +36,15 @@ async def seed_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         from sqlalchemy import text
-        try:
-            await conn.execute(text("TRUNCATE TABLE users, trials, trial_sites, patients, biomarker_readings, patient_evaluations, pv_reports, guidelines, monitoring_rules, audit_logs, pipeline_runs, pipeline_agent_status, pipeline_logs CASCADE;"))
-        except Exception:
-            pass # In case some tables don't exist yet
+        # Use DELETE instead of TRUNCATE for SQLite compatibility
+        for table in ["pipeline_logs", "pipeline_agent_status", "pipeline_runs", "audit_logs",
+                      "patient_evaluations", "biomarker_readings", "patients", "pv_reports",
+                      "monitoring_rules", "guidelines", "trial_sites", "trials", "users"]:
+            try:
+                await conn.execute(text(f"DELETE FROM {table}"))
+            except Exception:
+                pass  # table may not exist yet
+
 
     async with AsyncSessionLocal() as db:
         
@@ -191,12 +206,15 @@ async def seed_db():
         
         await db.commit()
         
-        # Reset sequences so future inserts don't fail with duplicate key errors
+        # Reset sequences (PostgreSQL only — silently skipped on SQLite)
         from sqlalchemy import text
-        await db.execute(text("SELECT setval('guidelines_id_seq', (SELECT MAX(id) FROM guidelines));"))
-        await db.execute(text("SELECT setval('monitoring_rules_id_seq', (SELECT MAX(id) FROM monitoring_rules));"))
-        await db.execute(text("SELECT setval('pv_reports_id_seq', (SELECT MAX(id) FROM pv_reports));"))
-        await db.commit()
+        try:
+            await db.execute(text("SELECT setval('guidelines_id_seq', (SELECT MAX(id) FROM guidelines));"))
+            await db.execute(text("SELECT setval('monitoring_rules_id_seq', (SELECT MAX(id) FROM monitoring_rules));"))
+            await db.execute(text("SELECT setval('pv_reports_id_seq', (SELECT MAX(id) FROM pv_reports));"))
+            await db.commit()
+        except Exception:
+            pass  # SQLite doesn't use sequences
         
         print("Database seeded and sequences reset successfully!")
 

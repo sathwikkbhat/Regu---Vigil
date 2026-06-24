@@ -9,9 +9,8 @@ try:
 except ImportError:
     fitz = None
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-model = genai.GenerativeModel("gemini-2.5-flash")
+# Model configured dynamically inside run_agent1
+model = None
 
 # ── Schema passed to Gemini (must be clean — no Optional/defaults) ──────────
 class _GeminiSchema(BaseModel):
@@ -59,55 +58,11 @@ BIOMARKER_MAP = {
     "resting heart rate": "Heart_Rate",
 }
 
-# Pre-baked results for known demo PDFs — used as fallback if Gemini quota is exceeded
-# Keyed by partial filename match (lowercase)
-PREBAKED_RESULTS = {
-    "cardiac_safety_update_v14": GuidelineExtraction(
-        biomarker="HRV_SDNN", operator="LT", old_value=28.0, new_value=30.0,
-        unit="ms", duration_days=30, trial_phases=["Phase II", "Phase III"],
-        effective_date="June 1, 2026", confidence_score=0.93,
-        source_url="FDA-CDER-2026-CARD-004", page_reference="Section 4.2"
-    ),
-    "heart_rate_draft": GuidelineExtraction(
-        biomarker="Heart_Rate", operator="GT", old_value=0.0, new_value=95.0,
-        unit="bpm", duration_days=30, trial_phases=["Phase III"],
-        effective_date="TBD", confidence_score=0.58,
-        source_url="EMA/CHMP/2026-DRAFT-091", page_reference="Section 2.2"
-    ),
-    "emergency_hrv_alert_v15": GuidelineExtraction(
-        biomarker="HRV_SDNN", operator="LT", old_value=30.0, new_value=32.0,
-        unit="ms", duration_days=30, trial_phases=["Phase II", "Phase III"],
-        effective_date="IMMEDIATE", confidence_score=0.95,
-        source_url="FDA-OSE-URGENT-2026-08-A", page_reference="Section 3"
-    ),
-    "tachycardia_monitoring": GuidelineExtraction(
-        biomarker="Heart_Rate", operator="GT", old_value=0.0, new_value=95.0,
-        unit="bpm", duration_days=30, trial_phases=["Phase III"],
-        effective_date="September 1, 2026", confidence_score=0.87,
-        source_url="FDA-CDER-2026-TACHY-011", page_reference="Section 3.1"
-    ),
-}
-
-def _prebaked_fallback(pdf_source: str) -> GuidelineExtraction:
-    """Match PDF filename to pre-baked result for demo reliability."""
-    name = pdf_source.lower()
-    for key, result in PREBAKED_RESULTS.items():
-        if key in name:
-            print(f"[Agent1] Using pre-baked result for: {key}")
-            return result
-            
-    # Generic fallback based on keywords in filename
-    if "cardiac_safety" in name or "v14" in name: return PREBAKED_RESULTS["cardiac_safety_update_v14"]
-    if "heartrate_draft" in name or "draft" in name: return PREBAKED_RESULTS["heart_rate_draft"]
-    if "emergency" in name or "v15" in name: return PREBAKED_RESULTS["emergency_hrv_alert_v15"]
-    if "tachycardia" in name: return PREBAKED_RESULTS["tachycardia_monitoring"]
-    
-    # Ultimate fallback if nothing matches
-    raise ValueError("IRRELEVANT_DOCUMENT: The uploaded PDF does not contain relevant regulatory or pharmacovigilance data for this demo.")
+# Pre-baked results and fallbacks removed for genuine Gemini analysis.
 
 def extract_text_from_pdf(filepath_or_url: str) -> str:
     if not fitz:
-        return "Simulated text for demo due to missing PyMuPDF. HRV threshold updated to 28ms."
+        raise ImportError("PyMuPDF (fitz) is not installed. PDF extraction failed.")
     text = ""
     try:
         doc = fitz.open(filepath_or_url)
@@ -115,12 +70,20 @@ def extract_text_from_pdf(filepath_or_url: str) -> str:
             text += page.get_text()
     except Exception as e:
         print(f"Failed to read PDF: {e}")
+        raise e
     return text
 
 async def run_agent1(pdf_source: str) -> GuidelineExtraction:
+    from core.env import load_robust_env
+    load_robust_env()
+    api_key = os.getenv("GEMINI_API_KEY")
+    
+    if not api_key or api_key.strip() == "" or "dummy" in api_key.lower():
+        raise ValueError("GEMINI_API_KEY is not configured in the environment. Please add a valid Gemini API key to your .env file.")
+        
     raw_text = extract_text_from_pdf(pdf_source)
     if not raw_text.strip():
-        raise ValueError("Could not extract any text from the document. Please ensure you upload a valid .pdf file.")
+        raise ValueError("Could not extract any text from the document. Please ensure you upload a valid, readable .pdf file.")
 
     prompt = f"""
     You are an expert regulatory parser for pharmacovigilance systems. Extract the biomarker safety rule
@@ -146,6 +109,9 @@ async def run_agent1(pdf_source: str) -> GuidelineExtraction:
     """
 
     try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        
         response = model.generate_content(
             prompt,
             generation_config=genai.GenerationConfig(
@@ -157,7 +123,7 @@ async def run_agent1(pdf_source: str) -> GuidelineExtraction:
         raw = _GeminiSchema.model_validate_json(response.text)
         
         if not raw.is_relevant:
-            raise ValueError("IRRELEVANT_DOCUMENT: Gemini rejected this document. It does not appear to be a valid regulatory guideline.")
+            raise ValueError("IRRELEVANT_DOCUMENT: This document does not appear to be a valid regulatory guideline or pharmacovigilance safety update.")
             
         extraction = GuidelineExtraction(
             biomarker=raw.biomarker,
@@ -179,10 +145,7 @@ async def run_agent1(pdf_source: str) -> GuidelineExtraction:
         return extraction
 
     except Exception as e:
-        err_str = str(e).lower()
-        # If Gemini quota/rate-limit hit — use pre-baked result so demo never fails
-        if "429" in err_str or "quota" in err_str or "resource_exhausted" in err_str or "rate" in err_str:
-            print(f"[Agent1] Gemini quota hit. Falling back to pre-baked result for: {pdf_source}")
-            return _prebaked_fallback(pdf_source)
         print(f"Gemini Agent 1 error: {e}")
         raise e
+
+

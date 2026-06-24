@@ -4,9 +4,9 @@ from typing import Optional
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from dotenv import load_dotenv
+from core.env import load_robust_env
 
-load_dotenv()
+load_robust_env()
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "fallback_secret_key_for_dev_mode_only")
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")

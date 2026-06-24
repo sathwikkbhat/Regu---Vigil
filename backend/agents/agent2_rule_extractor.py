@@ -17,6 +17,8 @@ async def run_agent2(db: AsyncSession, extraction: GuidelineExtraction, trial_id
     new_version = "1.0"
     if old_rule:
         diff_summary = {
+            "old": old_rule.threshold,
+            "new": extraction.new_value,
             "old_threshold": old_rule.threshold,
             "new_threshold": extraction.new_value,
             "old_operator": old_rule.operator,

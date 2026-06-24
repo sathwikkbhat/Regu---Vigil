@@ -266,3 +266,11 @@ export const useDownloadReport = () => {
   });
 };
 
+export const usePatientCopilot = () => {
+  return useMutation({
+    mutationFn: async ({ patientId, question }: { patientId: string; question: string }) => {
+      const response = await apiClient.post(`/patients/${patientId}/copilot`, { question });
+      return response.data;
+    }
+  });
+};

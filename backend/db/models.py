@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, JSON, Boolean, ARRAY, Enum
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, JSON, Boolean, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
@@ -31,6 +31,7 @@ class Guideline(Base):
     pdf_hash = Column(String, unique=True, index=True)
     status = Column(Enum(GuidelineStatus), default=GuidelineStatus.PENDING)
     raw_text_path = Column(String)
+    uploaded_by = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Rule(Base):
@@ -45,6 +46,8 @@ class Rule(Base):
     status = Column(Enum(RuleStatus), default=RuleStatus.PENDING)
     diff_summary = Column(JSON)
     source_guideline_id = Column(Integer, ForeignKey("guidelines.id"))
+    manually_approved = Column(Boolean, default=False)
+    confidence_score = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Trial(Base):
@@ -135,7 +138,7 @@ class User(Base):
     role = Column(String)
     org_id = Column(String)
     site_id = Column(String, nullable=True)
-    trial_ids = Column(ARRAY(String))
+    trial_ids = Column(JSON)  # stored as JSON array for SQLite compatibility
     last_login_at = Column(DateTime(timezone=True))
     hashed_password = Column(String)
 

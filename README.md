@@ -1,234 +1,168 @@
-<div align="center">
+# 🚨 ReguVigil — Real-Time Pharmacovigilance & AI Regulatory Guardrails
 
-<img src="Logo.jpeg" width="120" height="120" style="border-radius: 20px;" alt="ReguVigil Logo"/>
-
-# ReguVigil
-### *Regulatory Intelligence. In Real Time.*
-
-**Built at Xypheria Hackathon 2026 · Team: Regu Vigil**
-
-[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
-[![Gemini](https://img.shields.io/badge/Gemini-2.5_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
-[![LangGraph](https://img.shields.io/badge/LangGraph-Agentic_Pipeline-FF6B6B?style=for-the-badge)](https://langchain.com)
-[![SendGrid](https://img.shields.io/badge/SendGrid-Email_Alerts-1A82E2?style=for-the-badge&logo=twilio&logoColor=white)](https://sendgrid.com)
+> **From Regulatory PDF Publication to Patient Safety Compliance in <90 Seconds.**
+> ReguVigil is a multi-agent AI system built for clinical trial sponsors to monitor, parse, extract, evaluate, and alert safety officers and investigators of critical safety guideline revisions.
 
 ---
 
-> **The problem:** When the FDA publishes a new safety guideline, pharmaceutical sponsors must manually review PDFs, update their monitoring systems, re-evaluate hundreds of patients, and notify doctors — a process that takes days and is error-prone.
->
-> **ReguVigil does it in under 90 seconds. Automatically. With zero human error.**
+## 🎬 Platform Overview
 
-</div>
+When regulatory bodies (like the FDA or EMA) publish a new safety guideline, sponsors have to manually review complex documents, identify revised biomarker margins (e.g., HRV SDNN safety thresholds), query their patient database, and email principal investigators at various hospital sites. This manual process takes days and introduces significant human error.
 
----
-
-## 🎬 What It Does
-
-ReguVigil is a **multi-agent AI pharmacovigilance platform** that:
-
-1. **Monitors** FDA, EMA, ICH, CDSCO for new regulatory guideline PDFs — automatically, every 6 hours
-2. **Parses** the PDF using Gemini 2.5 Flash and extracts structured monitoring rules (biomarker, threshold, operator) with Pydantic validation
-3. **Evaluates** all 500 enrolled trial patients against the new rule in under 60 seconds using async batch processing
-4. **Alerts** every responsible doctor and data manager with a rich HTML email listing their flagged patients — automatically, the moment the pipeline completes
+**ReguVigil automates this entire lifecycle dynamically, with zero hard-coded mocks:**
+1. **Poll & Ingest**: Continuous automated scraping of RSS/Atom feeds across CDSCO, FDA, EMA, and ICH.
+2. **Dynamic Agent Parsing**: Agent 1 extracts safety rule structures (biomarkers, operator, revised margin, confidence) using a real, live `gemini-2.5-flash` model.
+3. **Database Audit & Diffing**: Agent 2 performs SQL diffing against current active trial rules and records revisions.
+4. **Clinical Sentinel**: Agent 3 executes asynchronous batch queries (via `asyncio.gather`) to evaluate 500 patient vitals against the new margins.
+5. **Autonomic Alerting**: Agent 4 groups flagged at-risk patients by hospital site and triggers Twilio SendGrid to dispatch site-scoped HTML alert summaries to respective Principal Investigators.
 
 ---
 
-## ⚡ One-Command Launch
+## 🛠️ Monorepo Tech Stack
 
-```bash
-# Clone and launch the entire stack
-git clone https://github.com/akshithjk/reguvigil.git
-cd reguvigil
+### Frontend (React Dashboard)
+- **Vite & React 18**: Ultra-fast hot-reloading compilation.
+- **Tailwind CSS & Framer Motion**: Glassmorphism aesthetic, interactive animations, and responsive components.
+- **React Query (TanStack)**: Declarative data fetching and state caching with 1.5s live polling.
+- **Recharts & React Globe**: Interactive 3D site tracking globe and clinical biomarker trend charts.
 
-# Configure environment
-cp .env.example .env
-# Edit .env with your GEMINI_API_KEY and SENDGRID_API_KEY
-
-# Launch everything (PostgreSQL + FastAPI + React + Scheduler)
-docker-compose up -d
-
-# Open the app
-open http://localhost:3000
-```
-
-That's it. One command. Four containers. Full pharmacovigilance AI system running.
+### Backend (FastAPI Services)
+- **FastAPI (ASGI)**: High-performance async Python backend.
+- **SQLAlchemy (Asyncpg)**: Non-blocking ORM integration for PostgreSQL/SQLite.
+- **LangGraph**: Directed-acyclic graph (DAG) state coordinator for the 4-Agent pipeline.
+- **Google GenAI Client**: Direct connection to `gemini-2.5-flash` with structured Pydantic schema validation.
+- **PyMuPDF**: Fast text parsing from raw PDF uploads.
 
 ---
 
-## 🤖 The AI Pipeline — 4 Agents, < 90 Seconds
+## 📂 Project Structure
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        LANGGRAPH AGENTIC PIPELINE                          │
-├──────────────┬──────────────┬──────────────────────┬────────────────────────┤
-│   AGENT 1    │   AGENT 2    │       AGENT 3        │        AGENT 4         │
-│  < 15 sec    │  < 5 sec     │      < 60 sec        │       < 20 sec         │
-│              │              │                      │                        │
-│ PDF Parser   │ Rule         │ Biomarker            │ PV Escalation          │
-│              │ Extractor    │ Sentinel             │ Reporter               │
-│ PyMuPDF +    │              │                      │                        │
-│ Gemini 2.5   │ Versions old │ Evaluates 500        │ Groups by site →       │
-│ Flash        │ rule SUPER-  │ patients in async    │ Emails each doctor     │
-│              │ SEDED, inserts│ batches of 50       │ only their patients    │
-│ Pydantic     │ new ACTIVE   │ via asyncio.gather   │ via SendGrid           │
-│ validation   │ rule to DB   │                      │                        │
-│              │              │                      │                        │
-│ → extracted_ │ → new_rule_  │ → flagged_patients[] │ → report_id            │
-│   rule JSON  │   id (int)   │   [{patient_id,      │   pipeline_status:     │
-│   confidence │              │    site_id, value}]  │   COMPLETE             │
-│   score      │              │                      │                        │
-└──────────────┴──────────────┴──────────────────────┴────────────────────────┘
-       ↕               ↕               ↕                       ↕
-                   PostgreSQL 15 — Central Data Layer
-         patients · biomarker_readings · monitoring_rules · evaluations
-                    pipeline_runs · audit_logs · pv_reports
-```
-
-**Confidence Guardrail:** If Agent 1 scores < 0.70 confidence on a document (ambiguous thresholds, draft status), it routes to a **Human Review Queue** where Priya manually approves before the pipeline continues. This prevents ambiguous regulatory drafts from automatically changing monitoring rules for 500 patients.
-
----
-
-## 👥 Role-Based Access — 3 Personas
-
-| Persona | Role | Access | Dashboard |
-|---|---|---|---|
-| **Priya S.** | Regulatory Affairs | Upload PDFs, trigger pipeline, approve/reject rules | Regulatory Dashboard + Live Pipeline View |
-| **Arjun M.** | Data Manager | View all 500 patients, export CSV, site analytics | Data Manager Dashboard + Globe Visualization |
-| **Dr. Ramesh K.** | Principal Investigator | Site 3 patients only, HRV trends, safety reports | Doctor Dashboard + 30-day Biomarker Charts |
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology | Purpose |
-|---|---|---|
-| **AI/LLM** | Google Gemini 2.5 Flash | PDF rule extraction with structured JSON output |
-| **Orchestration** | LangGraph | Multi-agent pipeline state machine |
-| **Validation** | Pydantic v2 | Strict schema enforcement on Gemini output |
-| **PDF Parsing** | PyMuPDF (fitz) | Extract raw text from uploaded guideline PDFs |
-| **Backend** | FastAPI + Uvicorn | Async REST API with JWT authentication |
-| **Database** | PostgreSQL 15 + SQLAlchemy Async | 13-table schema, asyncpg connection pool |
-| **Frontend** | React 18 + TypeScript + Vite | Role-based dashboards with real-time updates |
-| **UI** | Tailwind CSS + Framer Motion | Animated components, glassmorphism |
-| **Data Viz** | Recharts + react-globe.gl | HRV trend charts + 3D world site globe |
-| **Notifications** | SendGrid API | Automated site-scoped HTML email alerts |
-| **Containerization** | Docker Compose | 4-service stack with health checks |
-| **State Management** | React Query (TanStack) | Auto-polling pipeline status every 1.5s |
-
----
-
-## 📁 Project Structure
-
-```
-reguvigil-xypheria-2026/
+regu-vigil/
 ├── backend/
-│   ├── main.py                    # FastAPI app, middleware, background tasks
+│   ├── main.py                  # API router bindings, CORS headers, & scheduler hook
 │   ├── core/
-│   │   ├── auth.py                # JWT creation & verification (HS256)
-│   │   └── middleware.py          # JWT + SiteScope + Audit middleware
+│   │   ├── auth.py              # JWT encoding/decoding configuration
+│   │   ├── env.py               # Robust .env search utility (overrides system environment)
+│   │   └── middleware.py        # Token auth, audit logger, and hospital site scoping
 │   ├── db/
-│   │   ├── database.py            # Async SQLAlchemy engine + session factory
-│   │   └── models.py              # 13 table definitions
+│   │   ├── database.py          # Session factory and dynamic engine selector (SQLite/Postgres)
+│   │   └── models.py            # SQLite/Postgre database tables
 │   ├── api/
-│   │   ├── auth.py                # POST /auth/login
-│   │   ├── guidelines.py          # POST /guidelines/upload → triggers pipeline
-│   │   ├── patients.py            # GET /patients + CSV export + stats
-│   │   ├── pipeline.py            # GET /pipeline/status, /runs, /run/:id
-│   │   ├── rules.py               # Rule approve/reject + history
-│   │   ├── reports.py             # PV report + PDF download
-│   │   └── admin.py               # POST /demo/reset
-│   ├── agents/
-│   │   ├── pipeline.py            # LangGraph graph definition
-│   │   ├── agent1_parser.py       # PyMuPDF + Gemini + Pydantic validation
-│   │   ├── agent2_rule_extractor.py  # DB rule versioning
-│   │   ├── agent3_sentinel.py     # Async batch patient evaluation
-│   │   └── agent4_reporter.py     # SendGrid email + PV report
-│   ├── scripts/seed.py            # Seeds 500 patients + 15k biomarker readings
-│   └── scheduler/                 # Background regulatory monitoring loop
-├── frontend/
-│   ├── src/
-│   │   ├── App.tsx                # Routes + PrivateRoute guard
-│   │   ├── api/
-│   │   │   ├── client.ts          # Axios + JWT interceptor + auto-logout
-│   │   │   └── queries.ts         # All React Query hooks
-│   │   ├── pages/                 # 13 page components
-│   │   └── components/            # TopBar, RoleSwitcher
-│   └── public/logo.jpeg
-├── docker-compose.yml             # 4 services: postgres, backend, frontend, scheduler
-├── .env.example                   # Environment variable template
-├── CHANGELOG.md                   # Full version history
-└── SECURITY.md                    # Security policy
+│   │   ├── auth.py              # User authentication routes
+│   │   ├── guidelines.py        # Upload endpoints & asynchronous pipeline trigger
+│   │   ├── patients.py          # Patient vitals lookup, 3D body viz dataset, and copilot agent
+│   │   ├── pipeline.py          # Log retrieval, runs list, and manual human override routes
+│   │   └── rules.py             # Active rules history, approval, and rejection
+│   └── agents/
+│       ├── pipeline.py          # LangGraph Graph compile & node routing definitions
+│       ├── agent1_parser.py     # Pure Gemini-powered PDF parsing with relevance validation
+│       ├── agent2_rule_extractor.py # SQL rule versioning and delta builder
+│       ├── agent3_sentinel.py   # Async-batch patient vitals evaluation
+│       └── agent4_reporter.py   # Twilio SendGrid HTML email alert template and dispatch
+└── frontend/
+    ├── src/
+    │   ├── api/
+    │   │   ├── client.ts        # Axios client with auto 401 JWT logout interceptor
+    │   │   └── queries.ts       # React Query endpoints and polling rules
+    │   ├── components/
+    │   │   ├── TopBar.tsx       # Brand header and database reset handler
+    │   │   └── RoleSwitcher.tsx # Instant demo persona switches via browser redirects
+    │   └── pages/
+    │       ├── Login.tsx        # Persona selection screen
+    │       ├── RegulatoryDashboard.tsx # Document uploads, pipeline logs, and approval queue
+    │       ├── DataManagerDashboard.tsx # Global patient records and interactive 3D Globe
+    │       ├── DoctorDashboard.tsx # Site-scoped vital graphs, notifications, and 3D body viz
+    │       └── BodyViz.tsx      # Patient-specific clinical copilot and interactive organ visualizer
+    └── vercel.json              # Rewrites routing rule to support Single-Page App (SPA) on Vercel
 ```
 
 ---
 
-## 🔐 Environment Variables
+## ⚡ Direct Local Setup
 
-```env
-# Database
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/reguvigil
+### 1. Setup Backend
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Configure your `.env` file inside the `backend/` directory:
+   ```env
+   GEMINI_API_KEY=your-gemini-api-key
+   # If you want to use email alerts:
+   SENDGRID_API_KEY=SG.xxx
+   SENDGRID_FROM_EMAIL=your-verified-sender@domain.com
+   ```
+4. Seed the database with 500 patients and 15,000 biomarker readings:
+   ```bash
+   python -m scripts.seed
+   ```
+5. Run the FastAPI development server:
+   ```bash
+   python -m uvicorn main:app --host 0.0.0.0 --port 8000
+   ```
 
-# AI
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Authentication
-JWT_SECRET_KEY=your_jwt_secret_key_here
-
-# Email Notifications
-SENDGRID_API_KEY=your_sendgrid_api_key_here
-SENDGRID_FROM_EMAIL=your_verified_sender@email.com
-SENDGRID_TO_DOCTOR=doctor@email.com
-SENDGRID_TO_DATAMANAGER=datamanager@email.com
-```
-
----
-
-## 🏥 Clinical Context
-
-**Trial:** GlucoZen Phase III — Novel oral hypoglycemic agent
-**Patients:** 500 enrolled across 5 hospital sites in India
-**Biomarkers Monitored:** HRV_SDNN (ms) · Heart_Rate (bpm) · SpO2 (%)
-**Regulatory Sources:** FDA CDER · EMA CHMP · ICH · CDSCO
-
----
-
-## 📧 Automated Alert System
-
-When patients are flagged AT_RISK, ReguVigil automatically sends:
-
-- **Doctor Alert** — scoped to their hospital site only. Dr. Ramesh K. sees only Apollo Chennai patients, not patients from other hospitals.
-- **Data Manager Alert** — full cross-site summary for regulatory compliance.
-
-Both emails arrive within seconds of Agent 4 completing, with no manual trigger required.
-
----
-
-## 📊 Demo Credentials
-
-| Username | Role | Dashboard URL |
-|---|---|---|
-| `priya` | Regulatory Affairs | `/dashboard/regulatory` |
-| `arjun` | Data Manager | `/dashboard/datamanager` |
-| `ramesh` | Doctor / PI | `/dashboard/doctor` |
-
-> No password required — this is a demo environment.
+### 2. Setup Frontend
+1. Navigate to the frontend directory:
+   ```bash
+   cd ../frontend
+   ```
+2. Install Node dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Vite React development server:
+   ```bash
+   npm run dev
+   ```
+4. Access the web app at `http://localhost:5173`.
 
 ---
 
-## 🔄 Reset Demo
+## 🚀 Deploying to Vercel (Frontend)
 
-Click the **RESET DEMO** button in the top navigation bar to instantly wipe and re-seed all 500 patients, biomarker readings, rules, and pipeline state. Uses `TRUNCATE CASCADE` (not DROP) to preserve asyncpg connection pool OID cache.
+Vercel is the premier platform for deploying React single-page applications.
+
+### Build and Deployment Steps
+1. Push your changes to your new GitHub repository:
+   ```bash
+   git add .
+   git commit -m "Configure project for Vercel deployment"
+   git push origin main
+   ```
+2. Log into your [Vercel Dashboard](https://vercel.com) and click **Add New Project**.
+3. Select your repository `sathwikkbhat/Regu---Vigil` from the list.
+4. **Configuration Settings**:
+   - **Framework Preset**: `Vite` (auto-detected)
+   - **Root Directory**: `frontend` (Ensure you set this to the `frontend` folder, since it is a monorepo)
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+5. **Environment Variables**:
+   - Add `VITE_API_BASE_URL` pointing to your deployed FastAPI backend (e.g. `https://your-backend-server.com`).
+6. Click **Deploy**.
+
+> [!NOTE]
+> The included `frontend/vercel.json` ensures that deep-links (like `/dashboard/doctor`) are correctly routed to Vite's `index.html` on Vercel without throwing a `404 Not Found` page error on refreshes.
 
 ---
 
-<div align="center">
+## 🧠 Dynamic Document Parsing Rules
+Unlike previous static versions that relied on filename checks and hard-coded fallbacks:
+- **Genuine AI Opinion**: Agent 1 uses a real Gemini API call to check whether the uploaded PDF matches clinical trials.
+- **Relevance Rejection**: If you upload an irrelevant file (like a resume, marketing guide, or assignment), Gemini sets `is_relevant: false`, throwing a clear `ValueError` explaining that the document is not an active pharmacovigilance safety update.
+- **Self-Correcting Env Loader**: The backend searches directories upwards to locate the workspace `.env` file, overriding any pre-defined OS environment keys to guarantee the Gemini calls proceed without authentication faults.
 
-**Built with ❤️ for Xypheria Hackathon 2026**
+---
 
-*ReguVigil — From Guideline Published to Patient Protected in < 90 Seconds*
+## 📐 How to Build a Stunning README
 
-</div>
+A stunning README turns a simple code repository into a professional open-source project. Here are the core pillars to follow when creating one:
+1. **Visual Hierarchy & Formatting**: Use badges, code blocks, dividers, and tables to make the document highly readable.
+2. **Clear Architecture**: Provide a flow chart, LangGraph diagram, or component breakdown so developers immediately understand how information travels.
+3. **Clinical/Real-World Context**: Explain *what* problem your application solves. Don't just list technical specifications; build a story around your software's usefulness.
+4. **Detailed Installation Guide**: Separate your monorepo into clear, sequential backend/frontend installation blocks so that any developer can clone and run it within 2 minutes.
+5. **Deployment Callouts**: Provide explicit instructions for cloud hosting platforms (like Vercel and Render), including necessary runtime configurations (such as Vite proxy variables and routing rewrites).

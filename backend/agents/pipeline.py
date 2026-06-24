@@ -63,7 +63,7 @@ async def _update_agent_status(db: AsyncSession, run_id: str, agent_number: int,
 async def agent1_parse_pdf(state: PipelineState) -> PipelineState:
     run_id = state['run_id']
     async with AsyncSessionLocal() as db:
-        await _log_pipeline(db, run_id, "INFO", "Agent 1 STARTED — Regulatory Parser (Gemini 2.0 Flash)")
+        await _log_pipeline(db, run_id, "INFO", "Agent 1 STARTED — Regulatory Parser (Gemini 2.5 Flash)")
         await _update_agent_status(db, run_id, 1, "Regulatory Parser", "RUNNING")
         
         start = time.perf_counter()
@@ -170,7 +170,7 @@ async def agent3_evaluate_patients(state: PipelineState) -> PipelineState:
 async def agent4_generate_report(state: PipelineState) -> PipelineState:
     run_id = state['run_id']
     async with AsyncSessionLocal() as db:
-        await _log_pipeline(db, run_id, "INFO", "Agent 4 STARTED — PV Reporter (Gemini 2.0 Flash)")
+        await _log_pipeline(db, run_id, "INFO", "Agent 4 STARTED — PV Reporter (Gemini 2.5 Flash)")
         await _update_agent_status(db, run_id, 4, "PV Reporter", "RUNNING")
         
         start = time.perf_counter()
@@ -301,7 +301,17 @@ async def approve_pipeline_run(run_id: str):
         res = await db.execute(gl_query)
         guideline = res.scalar_one_or_none()
         
-        pdf_path = f"/app/uploads/{guideline.pdf_url}" if guideline and not guideline.pdf_url.startswith('sample') else "sample_fda_guideline.pdf"
+        # Resolve PDF path: check if the stored url is a full path, then try temp dir
+        import os, tempfile
+        pdf_url = guideline.pdf_url if guideline else None
+        if pdf_url and os.path.isabs(pdf_url) and os.path.exists(pdf_url):
+            pdf_path = pdf_url
+        elif pdf_url and not pdf_url.startswith("sample") and not pdf_url.startswith("http"):
+            upload_dir = os.path.join(tempfile.gettempdir(), "rv_uploads")
+            candidate = os.path.join(upload_dir, pdf_url)
+            pdf_path = candidate if os.path.exists(candidate) else "sample_fda_guideline.pdf"
+        else:
+            pdf_path = "sample_fda_guideline.pdf"
 
     try:
         final_state = await pipeline.ainvoke({

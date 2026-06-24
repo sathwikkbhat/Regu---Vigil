@@ -137,6 +137,56 @@ const IDLE_AGENTS = [
   { number: 4, name: 'PV Reporter', status: 'IDLE' },
 ];
 
+const SAMPLE_PDFS = [
+  {
+    name: 'FDA_Cardiac_Safety_Update_v14.pdf',
+    label: 'FDA Cardiac Safety v14',
+    description: 'HRV_SDNN < 30ms · High confidence',
+    badge: '0.93',
+    badgeColor: '#22c55e',
+    icon: 'description',
+  },
+  {
+    name: 'EMA_HeartRate_Draft_Consultation_2026.pdf',
+    label: 'EMA Heart Rate Draft',
+    description: 'Ambiguous threshold · Human review',
+    badge: '0.58',
+    badgeColor: '#f59e0b',
+    icon: 'description',
+  },
+  {
+    name: 'FDA_Emergency_HRV_Alert_v15.pdf',
+    label: 'FDA Emergency HRV v15',
+    description: 'HRV_SDNN < 32ms · Emergency override',
+    badge: '0.95',
+    badgeColor: '#22c55e',
+    icon: 'warning',
+  },
+  {
+    name: 'FDA_Tachycardia_Monitoring_Guidance_2026.pdf',
+    label: 'FDA Tachycardia Guidance',
+    description: 'Heart_Rate > 95 bpm · New biomarker',
+    badge: '0.87',
+    badgeColor: '#22c55e',
+    icon: 'favorite',
+  },
+];
+
+const CountUp: React.FC<{ target: number; duration?: number }> = ({ target, duration = 1200 }) => {
+  const [val, setVal] = React.useState(0);
+  React.useEffect(() => {
+    let start = 0;
+    const step = Math.ceil(target / (duration / 16));
+    const timer = setInterval(() => {
+      start = Math.min(start + step, target);
+      setVal(start);
+      if (start >= target) clearInterval(timer);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [target, duration]);
+  return <>{val}</>;
+};
+
 export const PipelineLiveView: React.FC = () => {
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -256,6 +306,43 @@ export const PipelineLiveView: React.FC = () => {
         </div>
       )}
 
+      {/* Sample PDF Download Widget */}
+      <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', border: '1px solid #334155', borderRadius: 16, padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="material-symbols-outlined" style={{ color: '#60a5fa', fontSize: 18 }}>folder_open</span>
+            <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sample Test PDFs</span>
+          </div>
+          <span style={{ fontSize: 11, color: '#475569' }}>Click to download & upload to test the pipeline</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+          {SAMPLE_PDFS.map((pdf) => (
+            <a
+              key={pdf.name}
+              href={`/${pdf.name}`}
+              download={pdf.name}
+              style={{ textDecoration: 'none' }}
+            >
+              <div style={{
+                background: '#0f172a', borderRadius: 10, padding: '10px 12px',
+                border: '1px solid #1e293b', cursor: 'pointer', transition: 'all 0.2s',
+                display: 'flex', flexDirection: 'column', gap: 6
+              }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = '#3b82f6')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e293b')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span className="material-symbols-outlined" style={{ color: '#60a5fa', fontSize: 16 }}>{pdf.icon}</span>
+                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: pdf.badgeColor, fontWeight: 700, background: `${pdf.badgeColor}18`, padding: '1px 5px', borderRadius: 4 }}>{pdf.badge}</span>
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#e2e8f0', lineHeight: 1.3 }}>{pdf.label}</div>
+                <div style={{ fontSize: 10, color: '#64748b', lineHeight: 1.3 }}>{pdf.description}</div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -273,6 +360,50 @@ export const PipelineLiveView: React.FC = () => {
           {triggerPipeline.isPending ? 'Uploading...' : 'Upload PDF & Run Pipeline'}
         </button>
       </div>
+
+      {/* Success Banner */}
+      {isComplete && runData?.patients_flagged != null && (
+        <div style={{
+          background: 'linear-gradient(135deg, #052e16 0%, #064e3b 100%)',
+          border: '2px solid #22c55e',
+          borderRadius: 16,
+          padding: '18px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 0 32px rgba(34,197,94,0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span className="material-symbols-outlined" style={{ color: '#4ade80', fontSize: 36 }}>check_circle</span>
+            <div>
+              <div style={{ fontWeight: 700, color: '#4ade80', fontSize: 16, marginBottom: 4 }}>✓ Pipeline Complete — All 4 Agents Finished</div>
+              <div style={{ fontSize: 13, color: '#86efac' }}>500 patients re-evaluated against the new regulatory rule.</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 24, textAlign: 'center' }}>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'monospace', color: '#4ade80' }}>
+                <CountUp target={runData?.patients_evaluated || 500} />
+              </div>
+              <div style={{ fontSize: 10, color: '#86efac', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Evaluated</div>
+            </div>
+            <div style={{ width: 1, background: '#166534' }} />
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'monospace', color: runData?.patients_flagged > 0 ? '#f87171' : '#4ade80' }}>
+                <CountUp target={runData?.patients_flagged || 0} />
+              </div>
+              <div style={{ fontSize: 10, color: '#86efac', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Flagged</div>
+            </div>
+            <div style={{ width: 1, background: '#166534' }} />
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'monospace', color: '#4ade80' }}>
+                {totalMs > 0 ? `${(totalMs/1000).toFixed(1)}s` : '—'}
+              </div>
+              <div style={{ fontSize: 10, color: '#86efac', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Time</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Human Review Action Bar */}
       {isHumanReview && (

@@ -327,6 +327,105 @@ async def get_patient_pdf(
     )
 
 
+@router.post("/{id}/copilot")
+async def patient_copilot(
+    id: str,
+    body: dict,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Gemini-powered AI clinical assistant for a specific patient."""
+    import google.generativeai as genai
+    from core.env import load_robust_env
+    
+    load_robust_env()
+    question = body.get("question", "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is required")
+
+    # Fetch patient data
+    query = select(Patient).options(selectinload(Patient.readings), selectinload(Patient.evaluations)).where(Patient.id == id)
+    result = await db.execute(query)
+    patient = result.scalars().unique().first()
+    
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Build patient context for Gemini
+    hrv_readings = sorted([r for r in patient.readings if r.biomarker == "HRV_SDNN"], key=lambda r: r.recorded_at, reverse=True)
+    hr_readings = sorted([r for r in patient.readings if r.biomarker == "Heart_Rate"], key=lambda r: r.recorded_at, reverse=True)
+    
+    latest_hrv = hrv_readings[0].value if hrv_readings else None
+    latest_hr = hr_readings[0].value if hr_readings else None
+    
+    # Last 7 days trend
+    hrv_trend = [round(r.value, 1) for r in hrv_readings[:7]]
+    hr_trend = [round(r.value, 1) for r in hr_readings[:7]]
+    
+    evals = sorted(patient.evaluations, key=lambda e: e.evaluated_at) if patient.evaluations else []
+    latest_eval = evals[-1] if evals else None
+    status = "AT RISK" if (latest_eval and latest_eval.flagged) else "SAFE"
+
+    patient_context = f"""
+Patient ID: {id}
+Site: {patient.site_id or 'Unknown'}
+Current Status: {status}
+Latest HRV (SDNN): {f'{latest_hrv:.1f} ms' if latest_hrv else 'N/A'} (Threshold: < 28ms = AT RISK)
+Latest Heart Rate: {f'{latest_hr:.1f} bpm' if latest_hr else 'N/A'} (Threshold: > 95bpm = AT RISK)
+HRV trend (last 7 days, newest first): {hrv_trend}
+Heart Rate trend (last 7 days, newest first): {hr_trend}
+Total readings available: {len(patient.readings)}
+Active regulatory rule: HRV_SDNN LT 28ms (Rule v1.3, GlucoZen Phase III trial)
+"""
+
+    system_prompt = f"""You are ReguVigil AI Copilot, an expert clinical pharmacovigilance assistant embedded in a multi-agent regulatory safety monitoring system for clinical trials.
+
+You have access to the following real-time patient data:
+{patient_context}
+
+Answer the clinician's question concisely and clinically. Focus on:
+- Interpreting the biomarker data (HRV trends, heart rate patterns)
+- Regulatory implications based on the active monitoring rules
+- Actionable clinical recommendations
+- Risk assessment based on current values vs thresholds
+
+Keep responses under 120 words. Be direct, specific, and medically precise. Do NOT make things up — only reference data provided above."""
+
+    # Try Gemini AI, fall back to deterministic response
+    api_key = os.getenv("GEMINI_API_KEY")
+    
+    if api_key and "dummy" not in api_key.lower():
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = model.generate_content(f"{system_prompt}\n\nClinician asks: {question}")
+            ai_answer = response.text.strip()
+        except Exception as e:
+            err = str(e).lower()
+            # Fallback to deterministic response if API fails
+            if latest_hrv and latest_hrv < 28:
+                ai_answer = f"Patient {id} is AT RISK with HRV SDNN of {latest_hrv:.1f}ms, below the 28ms threshold. 7-day trend shows {'declining' if len(hrv_trend) > 1 and hrv_trend[0] < hrv_trend[-1] else 'stable'} values. Recommend immediate cardiology review and consideration of study drug suspension per Protocol Section 5.2."
+            else:
+                ai_answer = f"Patient {id} currently shows HRV SDNN of {latest_hrv:.1f if latest_hrv else 'N/A'}ms, within safe range. Continue standard monitoring. No immediate intervention required based on current biomarker readings."
+    else:
+        # Deterministic fallback when no API key
+        if latest_hrv and latest_hrv < 28:
+            ai_answer = f"⚠ ALERT: Patient {id} shows HRV SDNN of {latest_hrv:.1f}ms — below the regulatory threshold of 28ms. Trend over last 7 days: {hrv_trend}. This patient is flagged under Rule v1.3. Recommend: (1) Withhold study drug, (2) Expedited cardiology consultation, (3) Submit IND Safety Report within 15 days if cardiac event confirmed."
+        elif latest_hr and latest_hr > 95:
+            ai_answer = f"Patient {id} shows elevated Heart Rate of {latest_hr:.1f}bpm (>95bpm threshold). This may indicate drug-induced sympathomimetic activity. Recommend ECG confirmation and consider dose adjustment per Protocol Amendment 3."
+        else:
+            ai_answer = f"Patient {id} biomarkers are within acceptable ranges (HRV: {latest_hrv:.1f if latest_hrv else 'N/A'}ms, HR: {latest_hr:.1f if latest_hr else 'N/A'}bpm). Standard monitoring schedule should continue. No protocol deviations required at this time."
+
+    return {
+        "patient_id": id,
+        "question": question,
+        "answer": ai_answer,
+        "patient_status": status,
+        "latest_hrv": latest_hrv,
+        "latest_hr": latest_hr
+    }
+
+
 @router.post("/{id}/notify")
 async def notify_doctor(
     id: str,
