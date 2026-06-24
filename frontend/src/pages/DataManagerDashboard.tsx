@@ -145,17 +145,17 @@ export const DataManagerDashboard: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-[1920px] mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-[1920px] mx-auto space-y-6">
 
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Global Patient Cohort</h1>
-          <p className="text-slate-500">Monitor re-evaluations across all 10 trial sites in India.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Global Patient Cohort</h1>
+          <p className="text-slate-500 text-sm">Monitor re-evaluations across all 10 trial sites in India.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {activeSiteId && (
-            <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-2 text-sm font-semibold text-indigo-700">
+            <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-1.5 text-sm font-semibold text-indigo-700">
               <span className="material-symbols-outlined text-sm">location_on</span>
               {SITE_NAMES[activeSiteId]}
               <button onClick={() => { setActiveSiteId(null); setFilterMode('all'); }} className="ml-1 hover:text-indigo-900">
@@ -168,7 +168,7 @@ export const DataManagerDashboard: React.FC = () => {
             className="btn bg-white border border-slate-200 text-slate-700 shadow-sm flex items-center gap-2 hover:bg-slate-50"
           >
             <span className="material-symbols-outlined text-sm">download</span>
-            Export CSV
+            <span className="hidden sm:inline">Export</span> CSV
           </button>
         </div>
       </div>
@@ -204,7 +204,7 @@ export const DataManagerDashboard: React.FC = () => {
       {/* Globe + Site list */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* Site List Panel (Now on Left) */}
+        {/* Site List Panel */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col" style={{ height: 480 }}>
           <div className="p-5 border-b border-slate-100 flex-shrink-0">
             <h3 className="font-bold text-slate-800">Trial Sites</h3>
@@ -245,8 +245,8 @@ export const DataManagerDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Globe (Now on Right) */}
-        <div className="lg:col-span-2 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl relative" style={{ height: 480 }}>
+        {/* Globe — hidden on mobile since it requires WebGL + large viewport */}
+        <div className="hidden lg:block lg:col-span-2 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl relative" style={{ height: 480 }}>
           <GlobeVisualization
             siteFlags={siteFlags}
             siteTotals={siteTotals}
@@ -257,21 +257,21 @@ export const DataManagerDashboard: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div className="flex gap-2 flex-wrap">
           {(['all', 'flagged', 'by_site', 'by_biomarker'] as FilterMode[]).map((mode) => {
             const labels: Record<FilterMode, string> = {
-              all: 'All Patients',
-              flagged: '⚠ AT RISK Only',
+              all: 'All',
+              flagged: '⚠ AT RISK',
               by_site: 'By Site',
-              by_biomarker: 'Sort by HRV ↑',
+              by_biomarker: 'HRV ↑',
             };
             const isActive = filterMode === mode;
             return (
               <button
                 key={mode}
                 onClick={() => handleFilterMode(mode)}
-                className={`btn px-4 py-2 transition-all text-sm ${
+                className={`btn px-3 py-1.5 transition-all text-xs sm:text-sm ${
                   isActive
                     ? mode === 'flagged'
                       ? 'bg-red-600 border-red-600 text-white'
@@ -283,13 +283,13 @@ export const DataManagerDashboard: React.FC = () => {
               </button>
             );
           })}
-          <span className="text-sm text-slate-400 self-center ml-2">
-            Showing <strong className="text-slate-700">{visiblePatients.length}</strong> patients
+          <span className="text-xs sm:text-sm text-slate-400 self-center">
+            <strong className="text-slate-700">{visiblePatients.length}</strong> patients
           </span>
         </div>
         
         {/* Search Bar */}
-        <div className="relative w-72">
+        <div className="relative w-full sm:w-72">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
           <input 
             type="text" 
@@ -301,9 +301,9 @@ export const DataManagerDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Patient Table */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-500">
               <th className="px-6 py-4 font-semibold">Patient ID</th>
@@ -388,6 +388,7 @@ export const DataManagerDashboard: React.FC = () => {
             )}
           </tbody>
         </table>
+        </div>{/* end overflow-x-auto */}
         {totalPages > 1 && (
           <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
             <span className="text-sm text-slate-500">

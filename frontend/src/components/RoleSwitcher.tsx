@@ -40,18 +40,21 @@ export const RoleSwitcher: React.FC = () => {
   const currentRole = localStorage.getItem('userRole') || '';
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-slate-500 font-medium">DEMO ROLE:</span>
+    <div className="flex items-center gap-1 sm:gap-2">
+      {/* Label hidden on very small screens */}
+      <span className="text-xs text-slate-500 font-medium hidden sm:inline">DEMO ROLE:</span>
       <select 
         value={currentRole} 
         onChange={handleRoleChange}
-        className="text-sm border border-slate-200 rounded px-2 py-1 bg-slate-50 outline-none hover:bg-slate-100 transition-colors cursor-pointer"
+        className="text-xs sm:text-sm border border-slate-200 rounded px-1.5 sm:px-2 py-1 bg-slate-50 outline-none hover:bg-slate-100 transition-colors cursor-pointer max-w-[110px] sm:max-w-none"
+        title="Switch role"
       >
-        <option value="REGULATORY_AFFAIRS">Priya (Regulatory)</option>
-        <option value="DATA_MANAGER">Arjun (Data Mgr)</option>
-        <option value="DOCTOR">Dr. Ramesh (PI)</option>
+        <option value="REGULATORY_AFFAIRS">Priya (Reg)</option>
+        <option value="DATA_MANAGER">Arjun (DM)</option>
+        <option value="DOCTOR">Dr. Ramesh</option>
         <option value="login">Logout</option>
       </select>
     </div>
   );
 };
+

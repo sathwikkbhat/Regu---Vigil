@@ -49,6 +49,8 @@
 
   html {
     scroll-behavior: smooth;
+    /* Prevent horizontal overflow on mobile */
+    overflow-x: hidden;
   }
 
   body {
@@ -58,6 +60,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
+    overflow-x: hidden; /* belt + suspenders */
   }
 
   code, .font-mono {
@@ -187,6 +190,9 @@
   border: none;
   outline: none;
   text-decoration: none;
+  /* Fast tap feedback on iOS — no 300ms delay */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn-primary {
   background: var(--color-primary);
@@ -329,11 +335,18 @@
   height: 60px;
   display: flex;
   align-items: center;
-  padding: 0 24px;
+  padding: 0 16px;
   position: sticky;
   top: 0;
   z-index: 100;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  /* Don't let content overflow on narrow phones */
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .topbar { padding: 0 24px; }
 }
 
 /* Sidebar */
@@ -408,6 +421,8 @@
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   font-size: 14px;
+  /* Prevent font-size zoom on focus in iOS */
+  font-size: max(16px, 14px);
   background: var(--bg-surface);
   color: var(--text-primary);
   transition: border-color 150ms, box-shadow 150ms;

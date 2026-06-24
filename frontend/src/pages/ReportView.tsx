@@ -72,41 +72,41 @@ export const ReportView: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-64px)] w-full bg-slate-100 py-12 px-4 flex justify-center">
       <div className="w-full max-w-[860px] bg-white rounded-3xl shadow-2xl overflow-hidden relative">
-        <div className="bg-slate-50 border-b border-slate-200 px-10 py-4 flex justify-between items-center">
+        <div className="bg-slate-50 border-b border-slate-200 px-4 sm:px-10 py-3 sm:py-4 flex justify-between items-center flex-wrap gap-2">
           <button onClick={() => navigate(-1)} className="text-sm font-semibold text-slate-500 hover:text-slate-700 flex items-center gap-1">
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             Back
           </button>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button 
               onClick={handleSendToSponsor}
               disabled={isSending}
-              className="btn bg-white border border-slate-300 text-slate-700 shadow-sm text-sm py-1.5 disabled:opacity-50"
+              className="btn bg-white border border-slate-300 text-slate-700 shadow-sm text-xs sm:text-sm py-1.5 disabled:opacity-50"
             >
-              <span className={`material-symbols-outlined text-[16px] mr-1.5 ${isSending ? 'animate-spin' : ''}`}>
+              <span className={`material-symbols-outlined text-[16px] mr-1 ${isSending ? 'animate-spin' : ''}`}>
                 {isSending ? 'refresh' : 'mail'}
               </span>
-              {isSending ? 'Sending...' : 'Send to Sponsor'}
+              {isSending ? 'Sending...' : 'Sponsor'}
             </button>
-            <button onClick={handleDownloadPDF} className="btn btn-primary text-sm py-1.5 shadow-md shadow-blue-500/20">
-              <span className="material-symbols-outlined text-[16px] mr-1.5">download</span>
-              Download PDF
+            <button onClick={handleDownloadPDF} className="btn btn-primary text-xs sm:text-sm py-1.5 shadow-md shadow-blue-500/20">
+              <span className="material-symbols-outlined text-[16px] mr-1">download</span>
+              PDF
             </button>
           </div>
         </div>
 
-        <div className="px-10 py-12 space-y-10">
-          <div className="flex justify-between items-start border-b-2 border-slate-800 pb-8">
+        <div className="px-4 sm:px-10 py-8 sm:py-12 space-y-8 sm:space-y-10">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start border-b-2 border-slate-800 pb-6 sm:pb-8 gap-4">
             <div className="flex gap-4 items-center">
-              <div className={`w-14 h-14 text-white rounded-xl flex items-center justify-center ${isRisk ? 'bg-red-600' : 'bg-slate-800'}`}>
-                <span className="material-symbols-outlined text-[32px]">{isRisk ? 'warning' : 'person'}</span>
+              <div className={`w-12 h-12 sm:w-14 sm:h-14 text-white rounded-xl flex items-center justify-center ${isRisk ? 'bg-red-600' : 'bg-slate-800'}`}>
+                <span className="material-symbols-outlined text-[28px] sm:text-[32px]">{isRisk ? 'warning' : 'person'}</span>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Patient Safety Report</h1>
-                <p className="text-slate-500 font-medium tracking-wide mt-1">Individual Case Safety Report (ICSR)</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Patient Safety Report</h1>
+                <p className="text-slate-500 font-medium tracking-wide mt-1 text-sm">Individual Case Safety Report (ICSR)</p>
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right">
               <div className="bg-slate-100 text-slate-600 font-bold uppercase tracking-widest text-[10px] px-3 py-1 rounded mb-2 inline-block">
                 Strictly Confidential
               </div>
@@ -114,7 +114,7 @@ export const ReportView: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4">
             <div>
               <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Trial</div>
               <div className="font-bold text-slate-800 text-sm">GlucoZen Phase III</div>

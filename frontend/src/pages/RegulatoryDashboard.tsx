@@ -66,14 +66,14 @@ const AutoFetchStrip = () => {
   };
 
   return (
-    <div className="bg-slate-900 text-slate-300 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between shadow-lg text-sm border border-slate-700 transition-all duration-500">
-      <div className="flex items-center gap-3">
-        <div className="relative flex h-3 w-3">
+    <div className="bg-slate-900 text-slate-300 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-lg text-sm border border-slate-700 transition-all duration-500 gap-2 sm:gap-0">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div className="relative flex h-3 w-3 flex-shrink-0">
           {isSyncing && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>}
           <span className={`relative inline-flex rounded-full h-3 w-3 ${isSyncing ? 'bg-amber-500' : 'bg-green-500'}`}></span>
         </div>
         <span className="font-semibold text-white tracking-wide uppercase text-xs">Global Monitoring:</span>
-        <span className="font-mono text-xs opacity-90 min-w-[280px]">
+        <span className="font-mono text-xs opacity-90 truncate max-w-[200px] sm:max-w-none">
           {isSyncing ? (
             <span className="text-amber-400 animate-pulse">Scraping {currentSource}...</span>
           ) : (
@@ -141,11 +141,11 @@ export const RegulatoryDashboard: React.FC = () => {
   const rulesUpdatedCount = allRules.filter((r: any) => r.status !== 'PENDING').length;
 
   return (
-    <div className="p-8 max-w-[1920px] mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-[1920px] mx-auto space-y-6 md:space-y-8">
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border text-sm font-semibold transition-all ${
+        <div className={`fixed top-4 right-4 left-4 sm:left-auto sm:right-6 sm:top-6 z-50 flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4 rounded-xl shadow-xl border text-sm font-semibold transition-all ${
           toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'
         }`}>
           <span className="material-symbols-outlined text-base">{toast.type === 'success' ? 'check_circle' : 'error'}</span>
@@ -154,13 +154,13 @@ export const RegulatoryDashboard: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Regulatory Command Center</h1>
-          <p className="text-slate-500">Monitor guidelines and automate monitoring rules.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Regulatory Command Center</h1>
+          <p className="text-slate-500 text-sm">Monitor guidelines and automate monitoring rules.</p>
         </div>
-        <button onClick={() => navigate('/dashboard/pipeline')} className="btn btn-primary shadow-md shadow-blue-500/20">
-          <span className="material-symbols-outlined text-sm mr-2">speed</span>
+        <button onClick={() => navigate('/dashboard/pipeline')} className="btn btn-primary shadow-md shadow-blue-500/20 self-start sm:self-auto">
+          <span className="material-symbols-outlined text-sm mr-1">speed</span>
           Open Pipeline View
         </button>
       </div>
@@ -190,7 +190,7 @@ export const RegulatoryDashboard: React.FC = () => {
       )}
 
       {/* 4 Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <div className="card bg-surface p-5">
           <p className="text-slate-500 text-sm font-semibold mb-2">Guidelines Processed</p>
           <p className="text-3xl font-bold text-slate-800 tabular-nums">{guidelinesProcessed.toLocaleString()}</p>
@@ -228,7 +228,7 @@ export const RegulatoryDashboard: React.FC = () => {
             </div>
 
             {activeRules.length > 0 ? (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
                   <div className="flex justify-between mb-2">
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Previous Rule</span>

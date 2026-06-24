@@ -6,7 +6,7 @@ export const RuleHistory: React.FC = () => {
   const [selectedVersion, setSelectedVersion] = useState<string>('v1.3');
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
       
       {/* Header */}
       <div className="flex items-center gap-4 mb-4">
@@ -23,7 +23,7 @@ export const RuleHistory: React.FC = () => {
       </div>
 
       {/* Active Rule Banner */}
-      <div className="bg-white border border-slate-200 border-l-4 border-l-primary p-5 rounded-r-xl shadow-sm flex justify-between items-center">
+      <div className="bg-white border border-slate-200 border-l-4 border-l-primary p-4 sm:p-5 rounded-r-xl shadow-sm flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <span className="badge badge-primary font-bold">ACTIVE</span>
@@ -31,7 +31,7 @@ export const RuleHistory: React.FC = () => {
           </div>
           <p className="text-sm text-slate-500">Effective: Oct 24, 2026 • Triggered by FDA Guideline Revision</p>
         </div>
-        <button className="btn bg-slate-50 text-slate-600 border border-slate-200 text-sm">Download Audit Log</button>
+        <button className="btn bg-slate-50 text-slate-600 border border-slate-200 text-sm self-start sm:self-auto">Download Audit Log</button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8">

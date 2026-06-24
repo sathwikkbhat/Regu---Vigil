@@ -108,11 +108,11 @@ export const DoctorDashboard: React.FC = () => {
   const isRisk = selectedPatient?.status === 'AT_RISK';
 
   return (
-    <div className="p-8 max-w-[1920px] mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-[1920px] mx-auto space-y-6">
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border text-sm font-semibold ${
+        <div className={`fixed top-4 right-4 left-4 sm:left-auto sm:right-6 sm:top-6 z-50 flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4 rounded-xl shadow-xl border text-sm font-semibold ${
           toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
           toast.type === 'error'   ? 'bg-red-50 border-red-200 text-red-800' :
           'bg-blue-50 border-blue-200 text-blue-800'
@@ -125,18 +125,18 @@ export const DoctorDashboard: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">{hospitalName}</h1>
-          <p className="text-slate-500">Site {siteIndex} · GlucoZen Phase III Trial · {sitePatients.length} active patients</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">{hospitalName}</h1>
+          <p className="text-slate-500 text-sm">Site {siteIndex} · GlucoZen Phase III Trial · {sitePatients.length} active patients</p>
         </div>
-        <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border text-sm font-semibold ${
+        <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold self-start sm:self-auto ${
           flaggedCount > 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'
         }`}>
           <span className={`material-symbols-outlined text-sm ${flaggedCount > 0 ? 'animate-bounce' : ''}`}>
             {flaggedCount > 0 ? 'notification_important' : 'check_circle'}
           </span>
-          {flaggedCount > 0 ? `${flaggedCount} patients at risk` : 'All clear'}
+          {flaggedCount > 0 ? `${flaggedCount} at risk` : 'All clear'}
         </div>
       </div>
 

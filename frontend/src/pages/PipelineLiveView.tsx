@@ -278,7 +278,7 @@ export const PipelineLiveView: React.FC = () => {
   const totalMs = agents.reduce((sum: number, a: any) => sum + (a.duration_ms || 0), 0);
 
   return (
-    <div className="p-8 max-w-[1920px] mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-[1920px] mx-auto space-y-6 md:space-y-8">
       <style>{`
         @property --spin-angle {
           syntax: '<angle>';
@@ -311,7 +311,7 @@ export const PipelineLiveView: React.FC = () => {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border text-sm font-semibold transition-all ${
+        <div className={`fixed top-4 right-4 left-4 sm:left-auto sm:right-6 sm:top-6 z-50 flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4 rounded-xl shadow-xl border text-sm font-semibold transition-all ${
           toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
           toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
           'bg-blue-50 border-blue-200 text-blue-800'
@@ -332,7 +332,8 @@ export const PipelineLiveView: React.FC = () => {
           </div>
           <span style={{ fontSize: 11, color: '#475569' }}>Click to download & upload to test the pipeline</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+
           {SAMPLE_PDFS.map((pdf) => (
             <a
               key={pdf.name}
@@ -361,10 +362,10 @@ export const PipelineLiveView: React.FC = () => {
       </div>
 
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Pipeline Live View</h1>
-          <p className="text-slate-500">Monitor the end-to-end multi-agent system execution.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Pipeline Live View</h1>
+          <p className="text-slate-500 text-sm">Monitor the end-to-end multi-agent system execution.</p>
         </div>
         <div className="flex gap-3 items-center">
           {/* New Run / Reset button — only show when a run exists and is done */}
@@ -380,7 +381,7 @@ export const PipelineLiveView: React.FC = () => {
           <button
             onClick={handleUpload}
             disabled={isRunning || triggerPipeline.isPending || !!uploadingFile}
-            className={`btn ${(isRunning || triggerPipeline.isPending || uploadingFile) ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'btn-primary shadow-md shadow-blue-500/20'}`}
+            className={`btn flex-1 sm:flex-none justify-center ${(isRunning || triggerPipeline.isPending || uploadingFile) ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'btn-primary shadow-md shadow-blue-500/20'}`}
           >
             {(triggerPipeline.isPending || uploadingFile) ? (
               <span className="flex items-center gap-2">
@@ -524,7 +525,7 @@ export const PipelineLiveView: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
 
         {/* Terminal Log */}
         <div className="col-span-2 bg-[#0F172A] rounded-xl p-4 border border-slate-800 shadow-xl overflow-hidden h-96 flex flex-col">
