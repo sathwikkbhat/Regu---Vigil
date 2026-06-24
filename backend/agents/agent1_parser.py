@@ -108,44 +108,65 @@ async def run_agent1(pdf_source: str) -> GuidelineExtraction:
     CRITICAL INSTRUCTION: Analyze the text to see if it is a genuine regulatory document or pharmacovigilance guideline. If the text is completely unrelated (e.g. a resume, random article, blank document), set `is_relevant` to false. Otherwise, set it to true.
     """
 
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json",
-                response_schema=_GeminiSchema
+    genai.configure(api_key=api_key)
+    
+    models_to_try = [
+        "gemini-1.5-flash",
+        "gemini-flash-latest",
+        "gemini-3.5-flash",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-pro-latest"
+    ]
+    
+    last_error = None
+    for model_name in models_to_try:
+        try:
+            print(f"[Agent 1] Trying model: {model_name}...")
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(
+                prompt,
+                generation_config=genai.GenerationConfig(
+                    response_mime_type="application/json",
+                    response_schema=_GeminiSchema
+                )
             )
-        )
-
-        raw = _GeminiSchema.model_validate_json(response.text)
-        
-        if not raw.is_relevant:
-            raise ValueError("IRRELEVANT_DOCUMENT: This document does not appear to be a valid regulatory guideline or pharmacovigilance safety update.")
             
-        extraction = GuidelineExtraction(
-            biomarker=raw.biomarker,
-            operator=raw.operator,
-            old_value=raw.old_value,
-            new_value=raw.new_value,
-            unit=raw.unit or "ms",
-            duration_days=raw.duration_days or 30,
-            trial_phases=raw.trial_phases or ["Phase III"],
-            effective_date=raw.effective_date or "N/A",
-            confidence_score=raw.confidence_score,
-            source_url=raw.source_url or "",
-            page_reference=raw.page_reference or "",
-        )
+            raw = _GeminiSchema.model_validate_json(response.text)
+            
+            if not raw.is_relevant:
+                raise ValueError("IRRELEVANT_DOCUMENT: This document does not appear to be a valid regulatory guideline or pharmacovigilance safety update.")
+                
+            extraction = GuidelineExtraction(
+                biomarker=raw.biomarker,
+                operator=raw.operator,
+                old_value=raw.old_value,
+                new_value=raw.new_value,
+                unit=raw.unit or "ms",
+                duration_days=raw.duration_days or 30,
+                trial_phases=raw.trial_phases or ["Phase III"],
+                effective_date=raw.effective_date or "N/A",
+                confidence_score=raw.confidence_score,
+                source_url=raw.source_url or "",
+                page_reference=raw.page_reference or "",
+            )
 
-        normalized = BIOMARKER_MAP.get(extraction.biomarker.lower().strip())
-        if normalized:
-            extraction = extraction.model_copy(update={"biomarker": normalized})
-        return extraction
-
-    except Exception as e:
-        print(f"Gemini Agent 1 error: {e}")
-        raise e
+            normalized = BIOMARKER_MAP.get(extraction.biomarker.lower().strip())
+            if normalized:
+                extraction = extraction.model_copy(update={"biomarker": normalized})
+                
+            print(f"[Agent 1] Successfully parsed PDF using model: {model_name}")
+            return extraction
+            
+        except Exception as e:
+            last_error = e
+            # If the error is an explicit user-facing rejection, raise it immediately without attempting other models
+            if "IRRELEVANT_DOCUMENT" in str(e):
+                raise e
+            print(f"[Agent 1] Model {model_name} failed: {e}")
+            continue
+            
+    # If we get here, all models failed
+    raise last_error
 
 
