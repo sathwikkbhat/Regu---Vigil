@@ -37,14 +37,14 @@ async def fake_polling_task():
 async def lifespan(app: FastAPI):
     # Auto-seed database if empty
     from db.database import AsyncSessionLocal
-    from db.models import User
+    from db.models import Patient
     from sqlalchemy import select
     async with AsyncSessionLocal() as db:
         try:
-            result = await db.execute(select(User))
-            users = result.scalars().all()
-            if not users:
-                logger.info("[Startup] No users found. Auto-seeding database...")
+            result = await db.execute(select(Patient))
+            patients = result.scalars().all()
+            if not patients:
+                logger.info("[Startup] No patients found. Auto-seeding database...")
                 await seed_db()
             else:
                 logger.info("[Startup] Database already has data. Skipping auto-seed.")
