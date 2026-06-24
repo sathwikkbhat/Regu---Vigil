@@ -119,3 +119,20 @@ async def reset_demo():
         return {"status": "success", "message": "Demo reset successfully! Refreshing dashboard..."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@app.get("/debug/gemini-check")
+async def debug_gemini_check():
+    import os
+    key = os.getenv("GEMINI_API_KEY")
+    if not key:
+        return {"status": "missing", "message": "GEMINI_API_KEY is not set in the environment."}
+    key_str = str(key).strip()
+    if not key_str:
+        return {"status": "empty", "message": "GEMINI_API_KEY is empty."}
+    masked = key_str[:4] + "..." + key_str[-4:] if len(key_str) > 8 else "..."
+    return {
+        "status": "configured",
+        "length": len(key_str),
+        "masked": masked,
+        "message": f"GEMINI_API_KEY is configured in the environment (length {len(key_str)})."
+    }
