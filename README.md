@@ -156,13 +156,3 @@ Unlike previous static versions that relied on filename checks and hard-coded fa
 - **Relevance Rejection**: If you upload an irrelevant file (like a resume, marketing guide, or assignment), Gemini sets `is_relevant: false`, throwing a clear `ValueError` explaining that the document is not an active pharmacovigilance safety update.
 - **Self-Correcting Env Loader**: The backend searches directories upwards to locate the workspace `.env` file, overriding any pre-defined OS environment keys to guarantee the Gemini calls proceed without authentication faults.
 
----
-
-## 📐 How to Build a Stunning README
-
-A stunning README turns a simple code repository into a professional open-source project. Here are the core pillars to follow when creating one:
-1. **Visual Hierarchy & Formatting**: Use badges, code blocks, dividers, and tables to make the document highly readable.
-2. **Clear Architecture**: Provide a flow chart, LangGraph diagram, or component breakdown so developers immediately understand how information travels.
-3. **Clinical/Real-World Context**: Explain *what* problem your application solves. Don't just list technical specifications; build a story around your software's usefulness.
-4. **Detailed Installation Guide**: Separate your monorepo into clear, sequential backend/frontend installation blocks so that any developer can clone and run it within 2 minutes.
-5. **Deployment Callouts**: Provide explicit instructions for cloud hosting platforms (like Vercel and Render), including necessary runtime configurations (such as Vite proxy variables and routing rewrites).
