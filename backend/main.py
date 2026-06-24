@@ -35,6 +35,27 @@ async def fake_polling_task():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Auto-seed database if empty
+    from db.database import AsyncSessionLocal
+    from db.models import User
+    from sqlalchemy import select
+    async with AsyncSessionLocal() as db:
+        try:
+            result = await db.execute(select(User))
+            users = result.scalars().all()
+            if not users:
+                logger.info("[Startup] No users found. Auto-seeding database...")
+                await seed_db()
+            else:
+                logger.info("[Startup] Database already has data. Skipping auto-seed.")
+        except Exception as e:
+            logger.warning(f"[Startup] Database tables not found or error checking: {e}")
+            logger.info("[Startup] Attempting to create tables and seed...")
+            try:
+                await seed_db()
+            except Exception as se:
+                logger.error(f"[Startup] Auto-seed failed: {se}")
+
     task = asyncio.create_task(fake_polling_task())
     yield
     task.cancel()
