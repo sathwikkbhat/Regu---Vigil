@@ -1,7 +1,18 @@
 import axios from 'axios';
 
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  // Fall back to live Render backend if loaded on Vercel preview deployments
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    return 'https://regu-vigil.onrender.com';
+  }
+  return 'http://localhost:8000';
+};
+
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
