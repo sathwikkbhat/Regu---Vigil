@@ -53,7 +53,10 @@ app.add_middleware(
         "http://localhost:3000",   # Docker / production
         "http://localhost:5173",   # Vite dev server
         "http://127.0.0.1:5173",  # Vite alt address
+        "https://regu-vigil.vercel.app",
+        "https://requ-vigil.vercel.app",
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
