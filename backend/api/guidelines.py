@@ -39,6 +39,7 @@ async def get_guideline_stats(
 
 @router.post("/upload")
 async def upload_guideline(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(None),
     pdf_url: str = Form(None),
     user: dict = Depends(get_current_user),
@@ -140,9 +141,9 @@ async def upload_guideline(
     db.add(new_run)
     await db.commit()
     
-    # Trigger the 4-agent pipeline asynchronously using asyncio.create_task
+    # Trigger the 4-agent pipeline asynchronously using FastAPI BackgroundTasks
     # Do NOT wait for pipeline to complete
-    asyncio.create_task(run_pipeline_async(run_id, guideline_id, file_path))
+    background_tasks.add_task(run_pipeline_async, run_id, guideline_id, file_path)
     
     return {
         "guideline_id": guideline_id,
