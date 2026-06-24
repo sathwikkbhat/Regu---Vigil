@@ -1,9 +1,28 @@
-# 🚨 ReguVigil — Real-Time Pharmacovigilance & AI Regulatory Guardrails
+<div align="center">
+
+<img src="Logo.jpeg" width="120" height="120" style="border-radius: 20px;" alt="ReguVigil Logo"/>
+
+# ReguVigil
+### *Regulatory Intelligence. In Real Time.*
+
+**Built at Xypheria Hackathon 2026 · Team: Regu Vigil**
+
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![Gemini](https://img.shields.io/badge/Gemini-2.5_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Agentic_Pipeline-FF6B6B?style=for-the-badge)](https://langchain.com)
+[![SendGrid](https://img.shields.io/badge/SendGrid-Email_Alerts-1A82E2?style=for-the-badge&logo=twilio&logoColor=white)](https://sendgrid.com)
+
+</div>
 
 > **From Regulatory PDF Publication to Patient Safety Compliance in <90 Seconds.**
 > ReguVigil is a multi-agent AI system built for clinical trial sponsors to monitor, parse, extract, evaluate, and alert safety officers and investigators of critical safety guideline revisions.
 
 ---
+
 
 ## 🎬 Platform Overview
 
