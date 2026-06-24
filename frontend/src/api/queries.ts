@@ -33,13 +33,15 @@ export const usePipelineRun = (runId?: string) => {
     },
     enabled: !!runId,
     refetchInterval: (data: any) => {
-      if (!data) return 1500;
+      if (!data) return 2000;
       const status = data?.overall_status || data?.status;
-      if (status === 'COMPLETE' || status === 'ERROR' || status === 'REJECTED' || status === 'HUMAN_REVIEW') return false;
-      return 1500;
+      // Stop polling only on true terminal states — keep polling during HUMAN_REVIEW
+      if (status === 'COMPLETE' || status === 'ERROR' || status === 'REJECTED') return false;
+      return 2000;
     },
   });
 };
+
 
 export const usePipelineLogs = (runId?: string) => {
   return useQuery({

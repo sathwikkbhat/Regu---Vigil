@@ -70,6 +70,9 @@ async def agent1_parse_pdf(state: PipelineState) -> PipelineState:
         try:
             extraction = await run_agent1(state['pdf_path'])
             
+            # If fallback was used (Gemini unavailable), log a warning
+            is_fallback = extraction.raw_text and extraction.raw_text.startswith('[Gemini unavailable')
+            
             run_obj = await db.get(PipelineRun, run_id)
             if run_obj:
                 run_obj.confidence_score = extraction.confidence_score
@@ -79,8 +82,12 @@ async def agent1_parse_pdf(state: PipelineState) -> PipelineState:
             await asyncio.sleep(random.uniform(3.5, 7.0))
             
             elapsed = int((time.perf_counter() - start) * 1000)
+            
+            if is_fallback:
+                await _log_pipeline(db, run_id, "WARN", f"[Agent 1] Gemini API unavailable — smart fallback extraction used. Confidence: {extraction.confidence_score}")
             await _log_pipeline(db, run_id, "INFO", f"Agent 1 COMPLETE — {elapsed/1000:.1f}s. Confidence: {extraction.confidence_score}")
             await _update_agent_status(db, run_id, 1, "Regulatory Parser", "COMPLETE", duration=elapsed)
+
             
             return {
                 **state, 

@@ -188,8 +188,12 @@ const CountUp: React.FC<{ target: number; duration?: number }> = ({ target, dura
 };
 
 export const PipelineLiveView: React.FC = () => {
-  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [activeRunId, setActiveRunId] = useState<string | null>(() => {
+    // Restore run_id from localStorage so a page refresh doesn't lose the active run
+    try { return localStorage.getItem('pipeline_active_run_id'); } catch { return null; }
+  });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [uploadingFile, setUploadingFile] = useState<string | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const triggerPipeline = useTriggerPipeline();
@@ -198,6 +202,15 @@ export const PipelineLiveView: React.FC = () => {
 
   // Poll the specific run once we have a run_id
   const { data: runData } = usePipelineRun(activeRunId || undefined);
+
+  // Helper to set & persist the active run ID
+  const setAndPersistRunId = (id: string | null) => {
+    setActiveRunId(id);
+    try {
+      if (id) localStorage.setItem('pipeline_active_run_id', id);
+      else localStorage.removeItem('pipeline_active_run_id');
+    } catch {}
+  };
 
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type });
@@ -215,14 +228,18 @@ export const PipelineLiveView: React.FC = () => {
     input.onchange = async (e: any) => {
       const file = e.target.files[0];
       if (!file) return;
+      setUploadingFile(file.name);
       try {
         const result = await triggerPipeline.mutateAsync({ file });
         if (result?.run_id) {
-          setActiveRunId(result.run_id);
-          showToast(`Pipeline triggered! Run ID: ${result.run_id}`, 'info');
+          setAndPersistRunId(result.run_id);
+          showToast(`✓ PDF uploaded — Pipeline started! Run: ${result.run_id}`, 'success');
         }
-      } catch (err) {
-        showToast('Upload failed. Check backend logs.', 'error');
+      } catch (err: any) {
+        const msg = err?.response?.data?.detail || 'Upload failed. Check backend connection.';
+        showToast(`Upload failed: ${msg}`, 'error');
+      } finally {
+        setUploadingFile(null);
       }
     };
     input.click();
@@ -349,16 +366,35 @@ export const PipelineLiveView: React.FC = () => {
           <h1 className="text-2xl font-bold text-slate-800">Pipeline Live View</h1>
           <p className="text-slate-500">Monitor the end-to-end multi-agent system execution.</p>
         </div>
-        <button
-          onClick={handleUpload}
-          disabled={isRunning || triggerPipeline.isPending}
-          className={`btn ${isRunning || triggerPipeline.isPending ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'btn-primary shadow-md shadow-blue-500/20'}`}
-        >
-          <span className="material-symbols-outlined mr-2">
-            {triggerPipeline.isPending ? 'hourglass_empty' : 'upload_file'}
-          </span>
-          {triggerPipeline.isPending ? 'Uploading...' : 'Upload PDF & Run Pipeline'}
-        </button>
+        <div className="flex gap-3 items-center">
+          {/* New Run / Reset button — only show when a run exists and is done */}
+          {activeRunId && (isComplete || isError || isRejected) && (
+            <button
+              onClick={() => setAndPersistRunId(null)}
+              className="btn bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm"
+            >
+              <span className="material-symbols-outlined mr-1 text-sm">refresh</span>
+              New Run
+            </button>
+          )}
+          <button
+            onClick={handleUpload}
+            disabled={isRunning || triggerPipeline.isPending || !!uploadingFile}
+            className={`btn ${(isRunning || triggerPipeline.isPending || uploadingFile) ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'btn-primary shadow-md shadow-blue-500/20'}`}
+          >
+            {(triggerPipeline.isPending || uploadingFile) ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
+                Uploading...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">upload_file</span>
+                Upload PDF &amp; Run Pipeline
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Success Banner */}
@@ -507,8 +543,22 @@ export const PipelineLiveView: React.FC = () => {
 
           <div className="flex-1 overflow-y-auto font-mono text-xs leading-relaxed space-y-1">
             {logs.length === 0 ? (
-              <div className="text-slate-500">
-                {activeRunId ? 'Loading logs...' : 'Waiting for pipeline trigger — upload a PDF to begin.'}
+              <div className="text-slate-500 space-y-2">
+                {uploadingFile ? (
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin inline-block" />
+                    Uploading <strong className="text-blue-300">{uploadingFile}</strong> to backend...
+                  </div>
+                ) : activeRunId && (pipelineStatus === 'PENDING' || pipelineStatus === 'RUNNING') ? (
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin inline-block" />
+                    Gemini 2.5 Flash is analyzing the regulatory document...
+                  </div>
+                ) : activeRunId ? (
+                  <div className="text-slate-600">Fetching logs for run: <span className="text-slate-400">{activeRunId}</span></div>
+                ) : (
+                  <div>Waiting for pipeline trigger — upload a PDF to begin.</div>
+                )}
               </div>
             ) : (
               logs.map((log: any, i: number) => (
