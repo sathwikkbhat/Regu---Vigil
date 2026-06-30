@@ -169,6 +169,15 @@ Vercel is the premier platform for deploying React single-page applications.
 
 ---
 
+## ⚡ Render Cold Start & Performance Optimization
+
+Because the backend is hosted on Render's free tier, the server container is automatically spun down after 15 minutes of inactivity. To ensure a fast, fluid user experience and eliminate the initial 20–30s delay:
+- **Proactive Background Wake-up:** The frontend ([App.tsx](file:///c:/Users/bhats/regu%20vigil/frontend/src/App.tsx)) initiates a non-blocking GET request to `/health` as soon as the application mounts. While the user is selecting a role or reading the landing details, the Render container starts booting up in the background.
+- **Dynamic Visual Feedback:** If the backend is still completing its startup when a login is attempted, the login screens ([LoginRegulatory.tsx](file:///c:/Users/bhats/regu%20vigil/frontend/src/pages/LoginRegulatory.tsx), [LoginDataManager.tsx](file:///c:/Users/bhats/regu%20vigil/frontend/src/pages/LoginDataManager.tsx), and [LoginDoctor.tsx](file:///c:/Users/bhats/regu%20vigil/frontend/src/pages/LoginDoctor.tsx)) dynamically update the button to `"Waking up server..."` and show an animated warning message alerting the user of the ongoing server startup.
+- Subsequent calls (like cohort evaluations or patient visualizers) will execute instantly since the server is already active.
+
+---
+
 ## 🧠 Dynamic Document Parsing Rules
 Unlike previous static versions that relied on filename checks and hard-coded fallbacks:
 - **Genuine AI Opinion**: Agent 1 uses a real Gemini API call to check whether the uploaded PDF matches clinical trials.
