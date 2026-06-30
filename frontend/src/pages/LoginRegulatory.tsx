@@ -5,6 +5,7 @@ import { apiClient } from '../api/client';
 export const LoginRegulatory: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isSlow, setIsSlow] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({ processed: 1204 });
 
@@ -16,15 +17,22 @@ export const LoginRegulatory: React.FC = () => {
 
   const handleLogin = async () => {
     setLoading(true);
+    setIsSlow(false);
     setError(null);
+    const timer = setTimeout(() => {
+      setIsSlow(true);
+    }, 2500);
     try {
       const res = await apiClient.post('/auth/login', { username: 'priya' });
+      clearTimeout(timer);
       localStorage.setItem('jwt', res.data.access_token);
       localStorage.setItem('userRole', res.data.user?.role || 'REGULATORY_AFFAIRS');
       navigate('/dashboard/regulatory');
     } catch (err: any) {
+      clearTimeout(timer);
       setError('Login failed. Please ensure the backend is running.');
       setLoading(false);
+      setIsSlow(false);
     }
   };
 
@@ -90,6 +98,11 @@ export const LoginRegulatory: React.FC = () => {
           {error && (
             <p className="text-red-500 text-sm mb-2 font-medium">{error}</p>
           )}
+          {loading && isSlow && (
+            <p className="text-blue-600 text-xs mb-3 font-medium text-center animate-pulse">
+              ⚡ Waking up hosted backend (Render cold start can take 20-30s)...
+            </p>
+          )}
           <div className="mt-auto pt-4 flex gap-4">
             <button className="btn btn-ghost px-6" onClick={() => navigate('/login')} disabled={loading}>Back</button>
             <button
@@ -97,7 +110,7 @@ export const LoginRegulatory: React.FC = () => {
               onClick={handleLogin}
               disabled={loading}
             >
-              {loading ? 'Signing in...' : 'Enter Regulatory Dashboard'}
+              {loading ? (isSlow ? 'Waking up server...' : 'Signing in...') : 'Enter Regulatory Dashboard'}
               {!loading && <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>}
             </button>
           </div>

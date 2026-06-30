@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { apiClient } from './api/client';
 import { TopBar } from './components/TopBar';
 import { 
   LandingPage,
@@ -30,6 +31,11 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  React.useEffect(() => {
+    // Proactively wake up Render backend in the background as early as possible
+    apiClient.get('/health').catch(() => {});
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

@@ -5,19 +5,27 @@ import { apiClient } from '../api/client';
 export const LoginDataManager: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isSlow, setIsSlow] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
     setLoading(true);
+    setIsSlow(false);
     setError(null);
+    const timer = setTimeout(() => {
+      setIsSlow(true);
+    }, 2500);
     try {
       const res = await apiClient.post('/auth/login', { username: 'arjun' });
+      clearTimeout(timer);
       localStorage.setItem('jwt', res.data.access_token);
       localStorage.setItem('userRole', res.data.user?.role || 'DATA_MANAGER');
       navigate('/dashboard/datamanager');
     } catch (err: any) {
+      clearTimeout(timer);
       setError('Login failed. Please ensure the backend is running.');
       setLoading(false);
+      setIsSlow(false);
     }
   };
 
@@ -119,6 +127,11 @@ export const LoginDataManager: React.FC = () => {
           {error && (
             <p className="text-red-500 text-sm mb-2 font-medium">{error}</p>
           )}
+          {loading && isSlow && (
+            <p className="text-amber-600 text-xs mb-3 font-medium text-center animate-pulse">
+              ⚡ Waking up hosted backend (Render cold start can take 20-30s)...
+            </p>
+          )}
           <div className="mt-auto pt-4 flex gap-4">
             <button className="btn btn-ghost px-6" onClick={() => navigate('/login')} disabled={loading}>Back</button>
             <button
@@ -126,7 +139,7 @@ export const LoginDataManager: React.FC = () => {
               onClick={handleLogin}
               disabled={loading}
             >
-              {loading ? 'Signing in...' : 'Enter Data Manager Dashboard'}
+              {loading ? (isSlow ? 'Waking up server...' : 'Signing in...') : 'Enter Data Manager Dashboard'}
               {!loading && <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>}
             </button>
           </div>

@@ -7,7 +7,7 @@ from .auth import verify_token
 class JWTMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Allow open paths
-        open_paths = ["/docs", "/openapi.json", "/auth/login"]
+        open_paths = ["/docs", "/openapi.json", "/auth/login", "/health"]
         if request.url.path in open_paths or request.method == "OPTIONS":
             return await call_next(request)
             

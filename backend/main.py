@@ -93,6 +93,10 @@ app.include_router(reports.router)
 app.include_router(pipeline.router)
 app.include_router(admin.router)
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
 @app.get("/stats/guidelines-count")
 async def get_stats_guidelines_count():
     from db.database import AsyncSessionLocal
